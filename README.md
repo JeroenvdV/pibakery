@@ -12,7 +12,6 @@ PiBakery is a a blocks based drag and drop tool that allows you to customise and
 For more information see www.PiBakery.org or follow [@PiBakery](http://twitter.com/PiBakery) on Twitter.
 
 </br>
----
 
 # Installing from source
 
@@ -41,3 +40,6 @@ Lastly you'll need to create a file `images.json` inside the `os` folder which t
 You can then run PiBakery using
 </br>
 `npm start`
+
+# PiBakery on Linux
+PiBakery should run on Linux if you build from source, however you will need to have `kpartx` and `p7zip` installed. Most distributions have these in package repositories.

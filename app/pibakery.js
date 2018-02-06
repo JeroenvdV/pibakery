@@ -48,7 +48,7 @@ var fs = require('fs-extra')
 var isOnline = require('is-online')
 var umount = require('umount')
 var shellParser = require('node-shell-parser')
-var drivelistScanner = require('drivelist-scanner')
+var scanner = require('drivelist-scan')
 var path = require('path')
 var wget = require('wget-improved')
 var md5File = require('md5-file')
@@ -898,52 +898,54 @@ function getExtractedPath (callback, filepath, currentNumber) {
   })
 }
 
-var scanner = new drivelistScanner({interval: 1000})
-scanner.on('add', function (drives) {
-  if (drives.mountpoints.length === 0) {
+scanner.driveAdded = function (drive) {
+  if (drive.mountpoints.length === 0) {
     return
   }
-  console.log(drives)
+  console.log('added', drive)
   setTimeout(function () {
     if (! workspace) {
       var loadedInterval = setInterval(function () {
         if (workspace) {
           clearInterval(loadedInterval)
-          importExisting(drives)
+          importExisting(drive)
         }
       }, 1000)
     }else {
-      importExisting(drives)
+      importExisting(drive)
     }
   }, 1000)
-})
-scanner.on('remove', function (drives) {
-  if ((! drives.system) && (currentMode == 'update')) {
-    if (currentMode = 'update') {
-      var blockFile = piBakeryPath + 'blocks.xml'
-      fs.stat(blockFile, function (error, stat) {
-        if (error) {
-          console.error(error)
-          if (!! document.getElementById('onnextboot')) {
-            document.getElementById('hat').removeChild(document.getElementById('onnextboot'))
-            var newBlock = document.createElement('block')
-            newBlock.setAttribute('id', 'onfirstboot')
-            newBlock.setAttribute('type', 'onfirstboot')
-            document.getElementById('hat').appendChild(newBlock)
-          }
-          workspace.updateToolbox(document.getElementById('toolbox'))
-          Blockly.mainWorkspace.clear()
-          currentMode = 'write'
-          firstBoot = true
-          document.getElementById('flashSD').addEventListener('click', writeToSd)
-          document.getElementById('flashSD').removeEventListener('click', updateSd)
-          document.getElementById('flashSD').children[1].innerText = 'Write'
-          document.getElementById('sdImage').src = 'img/write-to-sd.png'
+}
+
+scanner.driveRemoved = function (drive) {
+  console.log('removed', drive)
+  if (currentMode == 'update') {
+    var blockFile = piBakeryPath + 'blocks.xml'
+    fs.stat(blockFile, function (error, stat) {
+      if (error) {
+        console.error(error)
+        if (!! document.getElementById('onnextboot')) {
+          document.getElementById('hat').removeChild(document.getElementById('onnextboot'))
+          var newBlock = document.createElement('block')
+          newBlock.setAttribute('id', 'onfirstboot')
+          newBlock.setAttribute('type', 'onfirstboot')
+          document.getElementById('hat').appendChild(newBlock)
         }
-      })
-    }
+        workspace.updateToolbox(document.getElementById('toolbox'))
+        Blockly.mainWorkspace.clear()
+        currentMode = 'write'
+        firstBoot = true
+        document.getElementById('flashSD').addEventListener('click', writeToSd)
+        document.getElementById('flashSD').removeEventListener('click', updateSd)
+        document.getElementById('flashSD').children[1].innerText = 'Write'
+        document.getElementById('sdImage').src = 'img/write-to-sd.png'
+      }
+    })
   }
-})
+}
+
+// start the scaner with a 5 second delay between scans
+scanner.begin(5000)
 
 /**
   * @desc called when a new drive has been added, used to import blocks from an
@@ -1817,7 +1819,7 @@ function getDriveListWin (callback) {
     }else {
       var length = disks.length
 
-      var drives = shellParser(execSync('wmic logicaldisk get caption,volumename,drivetype', {stdio: [null, null, null]}).toString())
+      var drives = shellParser(execSync('C:\Windows\System32\wbem\wmic logicaldisk get caption,volumename,drivetype', {stdio: [null, null, null]}).toString())
 
       for ( var x = 0; x < disks.length; x++) {
         for ( var y = 0; y < drives.length; y++) {
